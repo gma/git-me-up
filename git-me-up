@@ -13,8 +13,8 @@
 #     their own git repositories. Each external plugin is symlinked into
 #     vendor/plugins, and Git is instructed to ignore them.
 #
-#   - A new working branch is created (called "work" by default; override)
-#     it by setting the BRANCH environement variable.
+#   - A new working branch is created (called "work" by default; override
+#     it by setting the BRANCH environement variable).
 #
 # Synopsis: git-me-up <subversion-repo> <local-git-repo>
 #

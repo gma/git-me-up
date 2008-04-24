@@ -1,0 +1,48 @@
+README
+======
+
+git-me-up was written to automate the creation of a local git repo for a Rails
+app that is hosted in Subversion. It should work equally well for non Rails
+projects.
+
+In a nutshell, this is what it does:
+
+  - Clones the latest version of the source (skipping all the history for
+    performance reasons) into a new local Git repository.
+
+  - Recreates empty directories (that git chooses to ignore), but that your
+    app might need.
+
+  - Checks for Rails plugins installed via svn:externals and clones them into
+    their own git repositories. Each external plugin is symlinked into
+    vendor/plugins. Git is then instructed to ignore them so that it doesn't
+    attempt to commit the symlink.
+
+  - Creates a local working branch (called "work" by default; override it by
+    setting the BRANCH environement variable).
+
+All this happens in a manner that avoids adding Git metadata (such as
+.gitignore files) to your subversion repository.
+
+INSTALL
+=======
+
+To install git-me-up into /usr/local/bin, run:
+
+    $ sudo make install
+
+In order to run git-me-up you will need to have installed git-svn.
+
+USAGE
+=====
+
+You need to specify two arguments; the Subversion repo that you will be
+checking back into, and the path (relative to your current directory) of the
+Git repository that you'd like to create.
+
+For example:
+
+    $ git-me-up https://svn.mydomain.com/path/to/repo/project/trunk project
+
+Give it a whirl. If you don't like it, delete your local directory. No harm
+done...
