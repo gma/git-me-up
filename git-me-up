@@ -98,10 +98,8 @@ clone_external_plugins()
     export IFS=$'\n'  # iterate over lines, not words
     for line in $plugins; do
         plugin=$(echo $line | cut -f 1 -d " ")
-        echo "plugin: $plugin"
         if [ ! -e "$plugin_dir/$plugin" ]; then
             svn_repo=$(echo $line | cut -f 2 -d " ")
-            echo "svn repo: $svn_repo"
             clone_repository "$svn_repo" "$plugin_dir/$plugin"
         fi
 
