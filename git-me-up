@@ -2,6 +2,8 @@
 #
 # Author: Graham Ashton <graham@effectif.com>
 
+BRANCH="${BRANCH:-work}"
+
 ## Functions
 
 log()
@@ -19,7 +21,7 @@ check_for_local_dir()
 {
     local dir="$1"
     if [ -e "$dir" ]; then
-        echo "$(basename $0): $dir already exists - please move it!" 1>&2
+        echo "$(basename $0): ERROR: $dir already exists - please move it!" 1>&2
         exit 1
     fi
 }
@@ -28,6 +30,13 @@ get_latest_revision()
 {
     local repo="$1"
     svn log "$repo" | sed -n "2p" | cut -f 1 -d " "
+}
+
+ignore_generated_files()
+{
+    log "setting ignored files (from subversion; this can take a while)"
+    git svn show-ignore >> $GIT_EXCLUDE
+    echo ".gitignore" >> $GIT_EXCLUDE
 }
 
 clone_repository()
@@ -46,48 +55,47 @@ clone_repository()
         log "making empty directory: $dir"
         mkdir -p "$local_repo/$dir"
     done
-}
-
-ignore_generated_files()
-{
-    cat <<-EOF > $GITIGNORE
-._*
-.DS_Store
-db/schema.rb
-log/*.log
-public/plugin_assets
-tmp/*
-EOF
+    
+    pushd "$local_repo" >/dev/null
+    ignore_generated_files
+    popd >/dev/null
 }
 
 clone_external_plugins()
 {
     log "checking for plugins installed with svn:externals"
 
+    local plugin_dir="../plugins"
+    mkdir -p "$plugin_dir"
+    pushd "$LOCAL_REPO" >/dev/null
+    
+    local line plugin svn_repo
     export IFS=$(echo -e "\n")  # iterate over lines, not words
-    
-    pushd $LOCAL_REPO/vendor/plugins >/dev/null
-    local plugin
-    local local_repo
-    local svn_repo
-    for plugin in $(svn propget svn:externals "$SVN_REPO/vendor/plugins"); do
-        local_repo=$(echo $plugin | cut -f 1 -d " ")
-        svn_repo=$(echo $plugin | cut -f 2 -d " ")
-        clone_repository "$svn_repo" "$local_repo"
-        create_working_branch "$local_repo"
-        echo "vendor/plugins/$local_repo" >> $GITIGNORE
+    for line in $(svn propget svn:externals "$SVN_REPO/vendor/plugins"); do
+        plugin=$(echo $line | cut -f 1 -d " ")
+        if [ ! -e "$plugin_dir/$plugin" ]; then
+            svn_repo=$(echo $line | cut -f 2 -d " ")
+            clone_repository "$svn_repo" "$plugin_dir/$plugin"
+        fi
+        log "adding submodule: $LOCAL_REPO/vendor/plugins/$plugin"
+        git submodule add "$plugin_dir/$plugin" "vendor/plugins/$plugin"
+        echo "/vendor/plugins/$plugin" >> "$GIT_EXCLUDE"
     done
-    popd >/dev/null
-    
     unset IFS
+    
+    git submodule init
+    git submodule update
+    echo .gitmodules >> "$GIT_EXCLUDE"
+    
+    popd >/dev/null
 }
 
 create_working_branch()
 {
     local local_repo="$1"
-    log "creating 'work' branch on $(pwd)/$local_repo"
+    log "creating '$BRANCH' branch on $(pwd)/$local_repo"
     pushd "$local_repo" >/dev/null
-    git checkout -b work
+    git checkout -b "$BRANCH"
     popd >/dev/null
 }
 
@@ -98,11 +106,10 @@ create_working_branch()
 SVN_REPO="$1"
 LOCAL_REPO="$2"
 [ -z "$SVN_REPO" -o -z "$LOCAL_REPO" ] && usage
-GITIGNORE="$(pwd)/$LOCAL_REPO/.gitignore"
+GIT_EXCLUDE="$(pwd)/$LOCAL_REPO/.git/info/exclude"
 
 check_for_local_dir "$LOCAL_REPO"
 clone_repository "$SVN_REPO" "$LOCAL_REPO"
-ignore_generated_files
 if [ -e "$LOCAL_REPO/vendor/plugins" ]; then
     clone_external_plugins
 fi
