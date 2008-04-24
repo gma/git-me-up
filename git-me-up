@@ -52,7 +52,7 @@ get_latest_revision()
 
 ignore_generated_files()
 {
-    log "setting ignored files (from subversion; this can take a while)"
+    log "setting ignored files from subversion (this can take a while)"
     git svn show-ignore >> $GIT_EXCLUDE
     cat <<EOF >> $GIT_EXCLUDE
 
