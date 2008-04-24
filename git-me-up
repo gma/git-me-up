@@ -1,20 +1,7 @@
 #!/bin/bash
 #
 # git-me-up was written to automate the creation of a local git repo for a
-# Rails app that is hosted in Subversion. In a nutshell, this is what it
-# does:
-#
-#   - Clones the latest version of source (skipping all the history) into a
-#     new local Git repository.
-#
-#   - Recreates empty directories that git ignored, but that Rails might need.
-#
-#   - Checks for plugins installed via svn:externals and clones them into
-#     their own git repositories. Each external plugin is symlinked into
-#     vendor/plugins, and Git is instructed to ignore them.
-#
-#   - A new working branch is created (called "work" by default; override
-#     it by setting the BRANCH environement variable).
+# Rails app that is hosted in Subversion. See the README for more details.
 #
 # Synopsis: git-me-up <subversion-repo> <local-git-repo>
 #
