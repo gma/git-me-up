@@ -1,0 +1,109 @@
+#!/bin/sh
+#
+# Author: Graham Ashton <graham@effectif.com>
+
+## Functions
+
+log()
+{
+    echo "$(basename $0): $1"
+}
+
+usage()
+{
+    echo "Usage: $(basename $0) <svn-repository> <local-dir>" 1>&2
+    exit 1
+}
+
+check_for_local_dir()
+{
+    local dir="$1"
+    if [ -e "$dir" ]; then
+        echo "$(basename $0): $dir already exists - please move it!" 1>&2
+        exit 1
+    fi
+}
+
+get_latest_revision()
+{
+    local repo="$1"
+    svn log "$repo" | sed -n "2p" | cut -f 1 -d " "
+}
+
+clone_repository()
+{
+    local svn_repo="$1"
+    local local_repo="$2"
+    
+    log "finding latest revision of $svn_repo"
+    local revision=$(get_latest_revision "$svn_repo")
+    
+    log "creating git repository in $(pwd)/$local_repo"
+    local empty_dirs=$(git svn clone -$revision $svn_repo $local_repo 2>&1 | \
+        grep "W: +empty_dir:" | cut -f 3 -d " ")
+    local dir
+    for dir in $empty_dirs; do
+        log "making empty directory: $dir"
+        mkdir -p "$local_repo/$dir"
+    done
+}
+
+ignore_generated_files()
+{
+    cat <<-EOF > $GITIGNORE
+._*
+.DS_Store
+db/schema.rb
+log/*.log
+public/plugin_assets
+tmp/*
+EOF
+}
+
+clone_external_plugins()
+{
+    log "checking for plugins installed with svn:externals"
+
+    export IFS=$(echo -e "\n")  # iterate over lines, not words
+    
+    pushd $LOCAL_REPO/vendor/plugins >/dev/null
+    local plugin
+    local local_repo
+    local svn_repo
+    for plugin in $(svn propget svn:externals "$SVN_REPO/vendor/plugins"); do
+        local_repo=$(echo $plugin | cut -f 1 -d " ")
+        svn_repo=$(echo $plugin | cut -f 2 -d " ")
+        clone_repository "$svn_repo" "$local_repo"
+        create_working_branch "$local_repo"
+        echo "vendor/plugins/$local_repo" >> $GITIGNORE
+    done
+    popd >/dev/null
+    
+    unset IFS
+}
+
+create_working_branch()
+{
+    local local_repo="$1"
+    log "creating 'work' branch on $(pwd)/$local_repo"
+    pushd "$local_repo" >/dev/null
+    git checkout -b work
+    popd >/dev/null
+}
+
+## Main program
+
+[ -n "$DEBUG" ] && set -x
+
+SVN_REPO="$1"
+LOCAL_REPO="$2"
+[ -z "$SVN_REPO" -o -z "$LOCAL_REPO" ] && usage
+GITIGNORE="$(pwd)/$LOCAL_REPO/.gitignore"
+
+check_for_local_dir "$LOCAL_REPO"
+clone_repository "$SVN_REPO" "$LOCAL_REPO"
+ignore_generated_files
+if [ -e "$LOCAL_REPO/vendor/plugins" ]; then
+    clone_external_plugins
+fi
+create_working_branch "$LOCAL_REPO"
