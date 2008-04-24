@@ -12,11 +12,15 @@ In a nutshell, this is what it does:
 
   - Recreates empty directories (that git chooses to ignore), but that your
     app might need.
+    
+  - Converts any svn:ignore Subversion properties into entries in your
+    .git/info/exclude file.
 
   - Checks for Rails plugins installed via svn:externals and clones them into
-    their own git repositories. Each external plugin is symlinked into
-    vendor/plugins. Git is then instructed to ignore them so that it doesn't
-    attempt to commit the symlink.
+    their own git repositories (located in a new directory called ./plugins,
+    relative to your working directory). Each external plugin is symlinked
+    into vendor/plugins. Git is then instructed to ignore them so that it
+    doesn't attempt to commit the symlink back into Subversion.
 
   - Creates a local working branch (called "work" by default; override it by
     setting the BRANCH environement variable).
@@ -31,7 +35,7 @@ To install git-me-up into /usr/local/bin, run:
 
     $ sudo make install
 
-In order to run git-me-up you will need to have installed git-svn.
+You will need to install git-svn before you can use git-me-up.
 
 USAGE
 =====
