@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #
 # git-me-up was written to automate the creation of a local git repo for a
 # Rails app that is hosted in Subversion. In a nutshell, this is what it
@@ -87,21 +87,28 @@ clone_external_plugins()
 {
     log "checking for plugins installed with svn:externals"
 
+    local plugins=$(svn propget svn:externals "$SVN_REPO/vendor/plugins")
+    [ -z "$plugins" ] && return
+
+    pushd "$LOCAL_REPO" >/dev/null
     local plugin_dir="../plugins"
     mkdir -p "$plugin_dir"
-    pushd "$LOCAL_REPO" >/dev/null
     
     local line plugin svn_repo
-    export IFS=$(echo -e "\n")  # iterate over lines, not words
-    for line in $(svn propget svn:externals "$SVN_REPO/vendor/plugins"); do
+    export IFS=$'\n'  # iterate over lines, not words
+    for line in $plugins; do
         plugin=$(echo $line | cut -f 1 -d " ")
+        echo "plugin: $plugin"
         if [ ! -e "$plugin_dir/$plugin" ]; then
             svn_repo=$(echo $line | cut -f 2 -d " ")
+            echo "svn repo: $svn_repo"
             clone_repository "$svn_repo" "$plugin_dir/$plugin"
         fi
 
-        log "symlinking $LOCAL_REPO/vendor/plugins/$plugin"
-        ln -sf "$plugin_dir/$plugin" "vendor/plugins/$plugin"
+        log "symlinking $plugin into $LOCAL_REPO/vendor/plugins"
+        pushd vendor/plugins >/dev/null
+        ln -sf "../../$plugin_dir/$plugin"
+        popd >/dev/null
         echo "/vendor/plugins/$plugin" >> "$GIT_EXCLUDE"
     done
     unset IFS
