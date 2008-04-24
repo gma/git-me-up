@@ -1,6 +1,24 @@
 #!/bin/sh
 #
-# Author: Graham Ashton <graham@effectif.com>
+# git-me-up was written to automate the creation of a local git repo for a
+# Rails app that is hosted in Subversion. In a nutshell, this is what it
+# does:
+#
+#   - Clones the latest version of source (skipping all the history) into a
+#     new local Git repository.
+#
+#   - Recreates empty directories that git ignored, but that Rails might need.
+#
+#   - Checks for plugins installed via svn:externals and clones them into
+#     their own git repositories. Each external plugin is symlinked into
+#     vendor/plugins, and Git is instructed to ignore them.
+#
+#   - A new working branch is created (called "work" by default; override)
+#     it by setting the BRANCH environement variable.
+#
+# Synopsis: git-me-up <subversion-repo> <local-git-repo>
+#
+# Author:   Graham Ashton <graham@effectif.com>
 
 BRANCH="${BRANCH:-work}"
 
@@ -36,7 +54,11 @@ ignore_generated_files()
 {
     log "setting ignored files (from subversion; this can take a while)"
     git svn show-ignore >> $GIT_EXCLUDE
-    echo ".gitignore" >> $GIT_EXCLUDE
+    cat <<EOF >> $GIT_EXCLUDE
+
+# Git files
+.gitignore
+EOF
 }
 
 clone_repository()
@@ -77,15 +99,12 @@ clone_external_plugins()
             svn_repo=$(echo $line | cut -f 2 -d " ")
             clone_repository "$svn_repo" "$plugin_dir/$plugin"
         fi
-        log "adding submodule: $LOCAL_REPO/vendor/plugins/$plugin"
-        git submodule add "$plugin_dir/$plugin" "vendor/plugins/$plugin"
+
+        log "symlinking $LOCAL_REPO/vendor/plugins/$plugin"
+        ln -sf "$plugin_dir/$plugin" "vendor/plugins/$plugin"
         echo "/vendor/plugins/$plugin" >> "$GIT_EXCLUDE"
     done
     unset IFS
-    
-    git submodule init
-    git submodule update
-    echo .gitmodules >> "$GIT_EXCLUDE"
     
     popd >/dev/null
 }
