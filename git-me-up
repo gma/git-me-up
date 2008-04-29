@@ -34,7 +34,7 @@ check_for_local_dir()
 get_latest_revision()
 {
     local repo="$1"
-    svn log "$repo" | sed -n "2p" | cut -f 1 -d " "
+    svn log "$repo" | sed -n "2p" | cut -f 1 -d " " | sed "s/^r//"
 }
 
 ignore_generated_files()
@@ -53,11 +53,11 @@ clone_repository()
     local svn_repo="$1"
     local local_repo="$2"
     
-    log "finding latest revision of $svn_repo"
-    local revision=$(get_latest_revision "$svn_repo")
+    [ -z "$REVISION" ] && log "finding latest revision of $svn_repo"
+    local revision=${REVISION:-$(get_latest_revision "$svn_repo")}
     
     log "creating git repository in $(pwd)/$local_repo"
-    local empty_dirs=$(git svn clone -$revision $svn_repo $local_repo 2>&1 | \
+    local empty_dirs=$(git svn clone -r $revision $svn_repo $local_repo 2>&1 | \
         grep "W: +empty_dir:" | cut -f 3 -d " ")
     local dir
     for dir in $empty_dirs; do

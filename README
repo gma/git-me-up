@@ -7,12 +7,12 @@ projects.
 
 In a nutshell, this is what it does:
 
-  - Clones the latest version of the source (skipping all the history for
-    performance reasons) into a new local Git repository.
+  - Clones the latest version of the source (by default skipping the history
+    for performance reasons) into a new local Git repository.
 
   - Recreates empty directories (that git chooses to ignore), but that your
     app might need.
-    
+
   - Converts any svn:ignore Subversion properties into entries in your
     .git/info/exclude file.
 
@@ -46,7 +46,16 @@ Git repository that you'd like to create.
 
 For example:
 
-    $ git-me-up https://svn.mydomain.com/path/to/repo/project/trunk project
+    $ git-me-up http://svn.mydomain.com/repo/project/trunk project
+
+By default git-me-up will pull the latest version of your code from
+Subversion, ignoring all the history. If you want to override the revision
+pulled, set the REVISION environment variable, like this:
+
+    $ REVISION=123:HEAD http://svn.mydomain.com/repo/project/trunk project
+
+See the coverage of the -r option in the git-svn(1) man page for more examples
+of how to specify the revision.
 
 Give it a whirl. If you don't like it, delete your local directory. No harm
 done...
