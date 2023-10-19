@@ -1,5 +1,5 @@
-README
-======
+git-me-up
+=========
 
 git-me-up was written to automate the creation of a local git repo for a Rails
 app that is hosted in Subversion. It should work equally well for non Rails
