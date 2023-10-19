@@ -28,8 +28,8 @@ In a nutshell, this is what it does:
 All this happens in a manner that avoids adding Git metadata (such as
 .gitignore files) to your subversion repository.
 
-INSTALL
-=======
+Install
+-------
 
 To install git-me-up into /usr/local/bin, run:
 
@@ -37,8 +37,8 @@ To install git-me-up into /usr/local/bin, run:
 
 You will need to install git-svn before you can use git-me-up.
 
-USAGE
-=====
+Usage
+-----
 
 You need to specify two arguments; the Subversion repo that you will be
 checking back into, and the path (relative to your current directory) of the
